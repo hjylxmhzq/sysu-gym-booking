@@ -158,9 +158,9 @@ class CasPage extends Page {
     this.refUrl = '';
 
     this.form = {
-      username: 'hujy35',
-      password: 'Hjyqwe098',
-      captcha: 'v7ex',
+      username: '',
+      password: '',
+      captcha: '',
       execution: '',
       _eventId: 'submit',
       submit: 'LOGIN',
