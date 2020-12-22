@@ -7,7 +7,7 @@ import FormData from 'form-data';
 import axios from 'axios';
 import Cookie from './cookie';
 import io from './io';
-import { getUserInfo, solveCaptcha } from './utils';
+import { getUserInfo, solveCaptcha, EasyDate } from './utils';
 
 interface RequestHeaders {
   [key: string]: string;
@@ -119,8 +119,7 @@ export class CasPage extends Page {
     if (!this.refUrl) throw new Error('method init() should be called before login()')
     const captchaBuf = await this.getCaptcha();
     const captcha = await solveCaptcha(captchaBuf);
-    console.log('captcha: ', captcha);
-    const answers = await getUserInfo();
+    const answers = await getUserInfo(retry <= 1);
 
     this.form.username = answers['username'];
     this.form.password = answers['password'];
@@ -129,7 +128,7 @@ export class CasPage extends Page {
     const res = await this.postFormData(`https://cas.sysu.edu.cn/cas/login?service=${encodeURIComponent(this.refUrl)}`, this.form, { Host: 'cas.sysu.edu.cn' });
     if (!res || res.status !== 302) {
       if (retry > 10) {
-        throw new Error('login error, please check your password and captcha');
+        throw new Error('Login error, please check your netid and password');
       } else {
         return this.login(retry + 1);
       }
@@ -230,7 +229,11 @@ export class GymPage extends Page {
     this.date = date;
   }
   async getTimeList() {
-    const res = await this.get(`http://gym.sysu.edu.cn/product/getarea2.html?s_dates=${this.date}&serviceid=${this.serviceId}&type=day`);
+    const now = new EasyDate();
+    if (this.date !== now.getDateStr()) { // 当预定非当天的球场时，获取下一天的时间表，以免获取不到完整时间表
+      now.addDay(1);
+    }
+    const res = await this.get(`http://gym.sysu.edu.cn/product/getarea2.html?s_dates=${now.getDateStr()}&serviceid=${this.serviceId}&type=day`);
     return res.data.timeList.map((item: any) => item.TIME_NO);
   }
   async getServices() {

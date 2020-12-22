@@ -25,9 +25,9 @@ export async function solveCaptcha(img: Buffer) {
   return res.data;
 }
 
-export async function getUserInfo() {
+export async function getUserInfo(showLog = true) {
   if (fs.existsSync(USER_INFO_FILE)) {
-    console.log('账号已保存，请妥善保管当前目录下的user-info.json，如果您想切换账号，请删除此文件');
+    showLog && console.log('账号已保存，请妥善保管当前目录下的user-info.json，如果您想切换账号，请删除此文件');
     return JSON.parse(fs.readFileSync(USER_INFO_FILE).toString());
   }
   const answers = await inquirer.prompt([
@@ -44,4 +44,17 @@ export async function getUserInfo() {
   ]);
   fs.writeFileSync(USER_INFO_FILE, JSON.stringify(answers, null, 2));
   return answers;
+}
+
+export class EasyDate {
+  date: Date;
+  constructor(...args: Parameters<typeof Date>) {
+    this.date = new Date(...args);
+  }
+  addDay(days: number) {
+    this.date.setTime(this.date.getTime() + 3600 * 1000 * 24 * days);
+  }
+  getDateStr() {
+    return '' + this.date.getFullYear() + '-' + (this.date.getMonth() + 1) + '-' + this.date.getDate();
+  }
 }

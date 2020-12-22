@@ -61,8 +61,7 @@ async function run() {
   gym.setTime(timeAs['time']);
   const areas = await gym.getOkArea();
   if (!areas || !areas.length) {
-    console.log('选择预定的时间当前无可用场地，将在场地可用时自动预定');
-    delayBook(gym);
+    setTimeoutBooking(gym);
   } else {
     const areaAs = await inquirer.prompt([
       {
@@ -78,22 +77,7 @@ async function run() {
     ]);
     let orderid = await gym.book(areaAs['area']);
     if (!orderid) {
-      console.log('选择预定的时间当前无可用场地，将在使用定时预定');
-      const toBookDateAs = await inquirer.prompt([
-        {
-          type: 'datetime',
-          name: 'dt',
-          message: '请设置预定时间: ',
-          format: ['yyyy', '/', 'mm', '/', 'dd', ' ', 'hh', ':', 'MM', ' ', 'TT']
-        }
-      ]);
-      const until = new Date(toBookDateAs['dt']);
-      console.log(until.toLocaleString());
-      await waitUntil(+until, (remain) => {
-        const remainMsg = secondsFormat(remain / 1000);
-        io.updateLine(`将在 ${remainMsg} 后执行预定`);
-      });
-      delayBook(gym);
+      setTimeoutBooking(gym);
     } else {
       const payAs = await inquirer.prompt([
         {
@@ -126,7 +110,7 @@ async function sleep(sec: number, cb: (n: number) => void) {
   })
 }
 
-function waitUntil(timestamp: number, loopCb: (remainTime: number) => void, ) {
+function waitUntil(timestamp: number, loopCb: (remainTime: number) => void,) {
   return new Promise<void>((resolve, reject) => {
     const loop = () => {
       const now = +new Date();
@@ -140,6 +124,25 @@ function waitUntil(timestamp: number, loopCb: (remainTime: number) => void, ) {
     }
     loop();
   })
+}
+
+async function setTimeoutBooking(gym: GymPage) {
+  console.log('选择预定的时间当前无可用场地，将使用定时预定');
+  const toBookDateAs = await inquirer.prompt([
+    {
+      type: 'datetime',
+      name: 'dt',
+      message: '请设置执行预定的时间: ',
+      format: ['yyyy', '/', 'mm', '/', 'dd', ' ', 'hh', ':', 'MM', ' ', 'TT']
+    }
+  ]);
+  const until = new Date(toBookDateAs['dt']);
+  console.log(until.toLocaleString());
+  await waitUntil(+until, (remain) => {
+    const remainMsg = secondsFormat(remain / 1000);
+    io.updateLine(`将在 ${remainMsg} 后执行预定( ctrl/cmd+c 取消进程)`);
+  });
+  delayBook(gym);
 }
 
 async function delayBook(gym: GymPage, retry = 1) {
@@ -160,7 +163,7 @@ async function delayBook(gym: GymPage, retry = 1) {
     }, 5 * 60 * 1000);
   } else {
     await sleep(10, (n) => {
-      io.updateLine(`将在${n}s后支付，订单id[${orderid}]，( ctrl/cmd+c 取消进程)`);
+      io.updateLine(`将在${n}s后支付，订单id[${orderid}]( ctrl/cmd+c 取消进程)`);
     });
     const payResult = await gym.pay(orderid);
     console.log(payResult.message);
