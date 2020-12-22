@@ -41,3 +41,6 @@ yarn</code></pre>
 
 默认使用pkg打包为二进制文件（如果需要）
 <pre><code>npm run pkg</code></pre>
+
+### 其它
+有bug欢迎提交issue
