@@ -179,11 +179,12 @@ export class CasPage extends Page {
 
 export class GymPage extends Page {
   keepAliveTimer: ReturnType<typeof setTimeout> | null = null;
-  serviceId = '30';
+  serviceId: string;
   date = '';
   time = '';
-  constructor() {
+  constructor(serviceId = '61') {
     super('gympage_cookie');
+    this.serviceId = serviceId;
   }
 
   async init() {
@@ -231,6 +232,23 @@ export class GymPage extends Page {
   async getTimeList() {
     const res = await this.get(`http://gym.sysu.edu.cn/product/getarea2.html?s_dates=${this.date}&serviceid=${this.serviceId}&type=day`);
     return res.data.timeList.map((item: any) => item.TIME_NO);
+  }
+  async getServices() {
+    const res = await this.get(`http://gym.sysu.edu.cn/product/index.html`);
+    const $ = this.parseHtml(res.data);
+    const items = $('.item-ul li');
+    const services = [];
+    const lnks = items.find('a');
+    const names = items.find('dl > dd > h5');
+    for (let i = 0; i < items.length; i++) {
+      const link = (lnks[i] as cheerio.TagElement).attribs.href || '';
+      const matchId = link.match(/\?id=(\d+)/);
+      const name = (names[i] as cheerio.TagElement).children[0].data;
+      if (matchId && name) {
+        services.push([matchId[1], name]);
+      }
+    }
+    return services;
   }
   setTime(time: string) {
     this.time = time;

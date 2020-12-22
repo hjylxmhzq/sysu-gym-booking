@@ -18,6 +18,18 @@ async function run() {
   } else {
     console.log('账号已经登陆，已跳过登陆');
   }
+  const services = await gym.getServices();
+  const serviceAs = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'service',
+      message: '选择预定地点: ',
+      loop: false,
+      choices: services.map(s => s[1])
+    },
+  ]);
+  const service = services.find(s => s[1] === serviceAs['service']);
+  gym.setServiceId(service ? service[0] : '30');
   const dateList = Array.from({ length: 10 }).map((v, i) => {
     const now = new Date(Date.now() + 3600 * 24 * 1000 * i);
     const year = '' + now.getFullYear();
@@ -36,7 +48,6 @@ async function run() {
   ]);
   // console.log(dateList);
   gym.setDate(dateAs['date']);
-  gym.setServiceId('30');
   const timeList = await gym.getTimeList();
   const timeAs = await inquirer.prompt([
     {
