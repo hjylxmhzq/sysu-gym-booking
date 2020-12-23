@@ -46,15 +46,14 @@ export async function getUserInfo(showLog = true) {
   return answers;
 }
 
-export class EasyDate {
-  date: Date;
-  constructor(...args: Parameters<typeof Date>) {
-    this.date = new Date(...args);
+export class EasyDate extends Date {
+  constructor() {
+    super();
   }
   addDay(days: number) {
-    this.date.setTime(this.date.getTime() + 3600 * 1000 * 24 * days);
+    this.setTime(this.getTime() + 3600 * 1000 * 24 * days);
   }
   getDateStr() {
-    return '' + this.date.getFullYear() + '-' + (this.date.getMonth() + 1) + '-' + this.date.getDate();
+    return '' + this.getFullYear() + '-' + (this.getMonth() + 1) + '-' + this.getDate();
   }
 }
