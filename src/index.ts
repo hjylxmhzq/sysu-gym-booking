@@ -1,16 +1,18 @@
 import inquirer from 'inquirer';
-import datepicker from 'inquirer-datepicker-prompt';
+const datepicker = require('inquirer-datepicker-prompt');
 import io from './io';
 import { CasPage, GymPage } from './pages';
-import { secondsFormat } from './utils';
+import { getUserInfo, secondsFormat } from './utils';
 
 inquirer.registerPrompt('datetime', datepicker as any);
 
-async function run() {
+export async function run() {
+  const answers = await getUserInfo(true);
   const gym = new GymPage();
   let isLogin = await gym.init();
   if (!isLogin) {
     const cas = new CasPage();
+    cas.setUserInfo(answers.username, answers.password);
     let redirect = await cas.init();
     redirect = redirect || await cas.login();
     let res = await gym.login(redirect);
@@ -170,35 +172,19 @@ async function delayBook(gym: GymPage, retry = 1) {
   }
 }
 
-run();
-
-async function runDev() {
+export async function book(username: string, password: string, date: string, time: string, serviceId: string, pay = true) {
+  const cas = new CasPage();
+  cas.setUserInfo(username, password);
+  let redirect = await cas.init();
+  redirect = redirect || await cas.login();
   const gym = new GymPage();
-  let isLogin = await gym.init();
-  if (!isLogin) {
-    const cas = new CasPage();
-    let redirect = await cas.init();
-    redirect = redirect || await cas.login();
-    let res = await gym.login(redirect);
-  } else {
-    console.log('Already login, skip login process');
-  }
-  gym.setDate('2020-12-22');
-  gym.setServiceId('30');
-  const timeList = await gym.getTimeList();
-  gym.setTime(timeList[0]);
+  let res = await gym.login(redirect);
+  gym.setServiceId(serviceId);
+  gym.setDate(date);
+  gym.setTime(time);
   const areas = await gym.getOkArea();
-  if (!areas || !areas.length) {
-    console.log('选择预定的时间当前无可用场地，将在场地可用时自动预定');
-    delayBook(gym);
-  } else {
-    await sleep(10, (n) => {
-      io.updateLine(`将在${n}s后支付，( ctrl/cmd+c 取消进程)`);
-    });
-    const orderid = await gym.book(areas[0]);
-    const payResult = await gym.pay(orderid);
-    console.log(payResult.message);
-  }
+  const orderid = await gym.book(areas[0]);
+  if (!orderid) return false;
+  const payResult = pay && await gym.pay(orderid);
+  return { status: payResult ? 'payed' : 'ordered', data: payResult ? payResult.message : orderid };
 }
-
-// runDev();

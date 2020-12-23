@@ -7,7 +7,7 @@ import FormData from 'form-data';
 import axios from 'axios';
 import Cookie from './cookie';
 import io from './io';
-import { getUserInfo, solveCaptcha, EasyDate } from './utils';
+import { solveCaptcha, EasyDate } from './utils';
 
 interface RequestHeaders {
   [key: string]: string;
@@ -89,10 +89,14 @@ export class Page {
 export class CasPage extends Page {
   refUrl: string;
   form: any;
+  userInfo: {username: string, password: string};
   constructor() {
     super('caspage_cookie');
     this.refUrl = '';
-
+    this.userInfo = {
+      username: '',
+      password: '',
+    }
     this.form = {
       username: '',
       password: '',
@@ -115,14 +119,18 @@ export class CasPage extends Page {
     this.form.execution = ($('#fm1 input[name="execution"]')[0] as cheerio.TagElement).attribs.value;
   }
 
+  setUserInfo(username: string, password: string) {
+    this.userInfo.username = username;
+    this.userInfo.password = password;
+  }
+
   async login(retry = 1): Promise<string> {
     if (!this.refUrl) throw new Error('method init() should be called before login()')
     const captchaBuf = await this.getCaptcha();
     const captcha = await solveCaptcha(captchaBuf);
-    const answers = await getUserInfo(retry <= 1);
 
-    this.form.username = answers['username'];
-    this.form.password = answers['password'];
+    this.form.username = this.userInfo.username;
+    this.form.password = this.userInfo.password;
     this.form.captcha = captcha;
 
     const res = await this.postFormData(`https://cas.sysu.edu.cn/cas/login?service=${encodeURIComponent(this.refUrl)}`, this.form, { Host: 'cas.sysu.edu.cn' });
@@ -137,7 +145,7 @@ export class CasPage extends Page {
         res.headers['set-cookie'] && (res.headers['set-cookie'].forEach((cookie: string) => {
           this.cookie.parse(cookie);
         }));
-        await this.cookie.dump();
+        // await this.cookie.dump();
         return res.headers['location'];
       } catch (e) {
         throw e;
@@ -198,7 +206,7 @@ export class GymPage extends Page {
     res.headers['set-cookie'] && (res.headers['set-cookie'].forEach((cookie: string) => {
       this.cookie.parse(cookie);
     }));
-    await this.cookie.dump();
+    // await this.cookie.dump();
   }
   keepAlive(during = 600 /* seconds */) {
     const loop = async () => {
@@ -206,7 +214,7 @@ export class GymPage extends Page {
       io.updateLine(`Heartbeat request is sent [${new Date().toLocaleString()}]`);
       res.headers['set-cookie'] && (res.headers['set-cookie'].forEach((cookie: string) => {
         this.cookie.parse(cookie);
-        this.cookie.dump();
+        // this.cookie.dump();
       }));
       const isLogin = await this.init();
       if (!isLogin) {
