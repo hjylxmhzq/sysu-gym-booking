@@ -66,6 +66,10 @@ function run() {
         // console.log(dateList);
         gym.setDate(dateAs['date']);
         const timeList = yield gym.getTimeList();
+        if (!timeList.length) {
+            console.log(`无可预定时间段，请确认场地是否可预定: http://gym.sysu.edu.cn/product/show.html?id=${gym.serviceId}`);
+            return;
+        }
         const timeAs = yield inquirer_1.default.prompt([
             {
                 type: 'list',
@@ -102,13 +106,14 @@ function run() {
                     {
                         type: 'confirm',
                         name: 'pay',
-                        message: `确定使用运动时支付场地(订单id[${orderid}])费用吗(y/N): `,
+                        message: `确定使用运动时支付场地(订单id[${orderid}])费用吗(Y/n): `,
                     },
                 ]);
                 if (payAs['pay']) {
                     console.log('正在支付...');
                     const payResult = yield gym.pay(orderid);
                     console.log(payResult.message);
+                    console.log('请在个人中心查询订单信息: http://gym.sysu.edu.cn/order/showMyOrderDetail.html');
                 }
             }
         }

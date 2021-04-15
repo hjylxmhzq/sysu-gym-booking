@@ -71,7 +71,9 @@ class EasyDate extends Date {
         this.setTime(this.getTime() + 3600 * 1000 * 24 * days);
     }
     getDateStr() {
-        return '' + this.getFullYear() + '-' + (this.getMonth() + 1) + '-' + this.getDate();
+        const day = ('0' + this.getDate()).substr(-2);
+        const month = ('0' + (this.getMonth() + 1)).substr(-2);
+        return '' + this.getFullYear() + '-' + month + '-' + day;
     }
 }
 exports.EasyDate = EasyDate;
