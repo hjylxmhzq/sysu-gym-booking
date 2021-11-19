@@ -11,14 +11,16 @@
     "url": "https://github.com/hjylxmhzq/sysu-gym-booking"
   },
   "scripts": {
-    "build": "tsc -d",
+    "build": "rimraf dist && tsc -d && rollup -c rollup.config.js",
+    "debug": "tsc -d && node dist/app.js --inspect",
     "start": "tsc -d && node dist/app.js",
-    "pkg": "pkg ./dist/app.js --out-path=bin"
+    "pkg": "pkg ./dist/app.js --out-path=bin",
+    "nexe": "nexe ./dist/app.js --build -o ./bin/app"
   },
   "dependencies": {
-    "@types/inquirer": "^7.3.1",
     "@types/cheerio": "^0.22.23",
     "@types/form-data": "^2.5.0",
+    "@types/inquirer": "^7.3.1",
     "@types/node-fetch": "^2.5.7",
     "axios": "^0.21.0",
     "cheerio": "^1.0.0-rc.3",
@@ -28,7 +30,9 @@
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {
+    "nexe": "^4.0.0-beta.19",
     "pkg": "^4.4.9",
+    "rimraf": "^3.0.2",
     "ts-node": "^9.1.1",
     "typescript": "^4.1.3"
   }

@@ -134,7 +134,7 @@ export class CasPage extends Page {
     this.form.captcha = captcha;
 
     const res = await this.postFormData(`https://cas.sysu.edu.cn/cas/login?service=${encodeURIComponent(this.refUrl)}`, this.form, { Host: 'cas.sysu.edu.cn' });
-    if (!res || res.status !== 302) {
+    if (!res || res.status !== 302 || !res.headers.location.includes('://gym')) {
       if (retry > 10) {
         throw new Error('Login error, please check your netid and password');
       } else {
@@ -196,13 +196,15 @@ export class GymPage extends Page {
 
   async init() {
     // await this.cookie.restore();
-    const res = await this.get('http://gym.sysu.edu.cn/index.html');
+    const res = await this.get('https://gym.sysu.edu.cn/index.html');
     const $ = this.parseHtml(res.data);
     const usernameEl = $('#onlinename');
     return !!usernameEl.length;
   }
   async login(urlWithTicket: string) {
-    const res = await this.get(urlWithTicket);
+    const url = new URL(urlWithTicket);
+    url.protocol = 'https:';
+    const res = await this.get(url.href);
     res.headers['set-cookie'] && (res.headers['set-cookie'].forEach((cookie: string) => {
       this.cookie.parse(cookie);
     }));
@@ -210,7 +212,7 @@ export class GymPage extends Page {
   }
   keepAlive(during = 600 /* seconds */) {
     const loop = async () => {
-      const res = await this.get('http://gym.sysu.edu.cn/index.html');
+      const res = await this.get('https://gym.sysu.edu.cn/index.html');
       io.updateLine(`Heartbeat request is sent [${new Date().toLocaleString()}]`);
       res.headers['set-cookie'] && (res.headers['set-cookie'].forEach((cookie: string) => {
         this.cookie.parse(cookie);
@@ -241,11 +243,11 @@ export class GymPage extends Page {
     if (this.date !== now.getDateStr()) { // 当预定非当天的球场时，获取下一天的时间表，以免获取不到完整时间表
       now.addDay(1);
     }
-    const res = await this.get(`http://gym.sysu.edu.cn/product/getarea2.html?s_dates=${now.getDateStr()}&serviceid=${this.serviceId}&type=day`);
+    const res = await this.get(`https://gym.sysu.edu.cn/product/getarea2.html?s_dates=${now.getDateStr()}&serviceid=${this.serviceId}&type=day`);
     return res.data.timeList.map((item: any) => item.TIME_NO);
   }
   async getServices() {
-    const res = await this.get(`http://gym.sysu.edu.cn/product/index.html`);
+    const res = await this.get(`https://gym.sysu.edu.cn/product/index.html`);
     const $ = this.parseHtml(res.data);
     const items = $('.item-ul li');
     const services = [];
@@ -265,7 +267,7 @@ export class GymPage extends Page {
     this.time = time;
   }
   async getOkArea() {
-    const res = await this.get(`http://gym.sysu.edu.cn/product/findOkArea.html?s_date=${this.date}&serviceid=${this.serviceId}`);
+    const res = await this.get(`https://gym.sysu.edu.cn/product/findOkArea.html?s_date=${this.date}&serviceid=${this.serviceId}`);
     const areas = res.data.object && res.data.object.filter((area: any) => area.stock.time_no === this.time && area.status === 1); // status === 1 表示场地可预定
     return areas || [];
   }
@@ -275,17 +277,17 @@ export class GymPage extends Page {
     if (orderid) {
       return orderid;
     } else {
-      const res = await this.postFormData('http://gym.sysu.edu.cn/order/book.html', { param, json: true });
+      const res = await this.postFormData('https://gym.sysu.edu.cn/order/book.html', { param, json: true });
       return res.data.object ? res.data.object.orderid : null
     }
   }
   async pay(orderid: string) {
     const param = `{"payid":2,"orderid":"${orderid}","ctypeindex":0}`; // payid = 2 表示使用运动经费支付
-    const res = await this.postFormData('http://gym.sysu.edu.cn/pay/account/topay.html', { param, json: true });
+    const res = await this.postFormData('https://gym.sysu.edu.cn/pay/account/topay.html', { param, json: true });
     return res.data;
   }
   private async searchInCart(area: any) {
-    const res = await this.postFormData('http://gym.sysu.edu.cn/order/seachData.html', { orderid: '', id: '', page: '1', rows: '50' });
+    const res = await this.postFormData('https://gym.sysu.edu.cn/order/seachData.html', { orderid: '', id: '', page: '1', rows: '50' });
     if (res.data.rows?.length) {
       const data = res.data.rows.filter((item: any) => {
         return item.stockid === area.stockid && item.stockdetailid === area.id && item.status === 0; // status === 0 为预定中状态

@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-const datepicker = require('inquirer-datepicker-prompt');
+import datepicker from 'inquirer-datepicker-prompt';
 import io from './io';
 import { CasPage, GymPage } from './pages';
 import { getUserInfo, secondsFormat } from './utils';
